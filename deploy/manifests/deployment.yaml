@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: repo
+  annotations:
+    image.openshift.io/triggers: |-
+      [
+        {
+          "from": {
+            "kind": "ImageStreamTag",
+            "name": "repo:latest",
+            "namespace": "l4t"
+          },
+          "fieldPath": "spec.template.spec.containers[?(@.name==\"repo\")].image",
+          "paused": false
+        }
+      ]
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 50%
+  selector:
+    matchLabels:
+      app: repo
+  template:
+    metadata:
+      labels:
+        app: repo
+    spec:
+      containers:
+        - name: repo
+          image: repo:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: web
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 400m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
